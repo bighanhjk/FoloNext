@@ -14,6 +14,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   google: "Google",
   "vercel-ai-gateway": "Vercel AI Gateway",
   openrouter: "OpenRouter",
+  deepseek: "Deepseek",
 }
 
 export const ByokProviderItem = ({ provider, onEdit, onDelete }: ByokProviderItemProps) => {

@@ -61,6 +61,11 @@
       "require": "./src/modules/list/*.ts",
       "import": "./src/modules/list/*.ts"
     },
+    "./llm": {
+      "types": "./src/modules/llm/index.ts",
+      "require": "./src/modules/llm/index.ts",
+      "import": "./src/modules/llm/index.ts"
+    },
     "./morph": {
       "types": "./src/morph/*.ts",
       "require": "./src/morph/*.ts",

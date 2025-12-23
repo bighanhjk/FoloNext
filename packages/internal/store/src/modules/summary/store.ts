@@ -6,6 +6,7 @@ import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { getEntry } from "../entry/getter"
+import { llmService } from "../llm/service"
 import { SummaryGeneratingStatus } from "./enum"
 import type { StatusID } from "./utils"
 import { getGenerateSummaryStatusId } from "./utils"
@@ -168,13 +169,39 @@ class SummarySyncService {
       state.generatingStatus[statusID] = SummaryGeneratingStatus.Pending
     })
 
-    // Use Our AI to generate summary
-    const pendingPromise = api()
-      .ai.summary({
+    const run = async () => {
+      // 1. Try Client-Side Generation if provider is configured
+      const provider = llmService.getProvider()
+
+      if (provider) {
+        if (!entry.content) {
+          // TODO: Maby trigger content fetch here?
+          throw new Error("Content not loaded for client-side summary")
+        }
+
+        try {
+          const summary = await provider.generateSummary(entry.content, actionLanguage)
+          if (summary) {
+            return { data: summary }
+          }
+        } catch (e) {
+          console.error("Client-side summary failed", e)
+          // If BYOK is active, we stop here to avoid hitting server paywall (402)
+          // unless we want to silently fallback? No, user expects BYOK.
+          throw e
+        }
+      }
+
+      // 2. Fallback to Server (only if no BYOK provider)
+      return api().ai.summary({
         id: entryId,
         language: actionLanguage,
         target,
       })
+    }
+
+    // Use Our AI to generate summary
+    const pendingPromise = run()
       .then((summary) => {
         immerSet((state) => {
           if (!state.data[entryId]) {

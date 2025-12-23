@@ -1,4 +1,5 @@
 import type { AuthClient } from "@follow/shared/auth"
+import type { AISettings } from "@follow/shared/settings/interface"
 import type { QueryClient } from "@tanstack/react-query"
 
 import type { FollowAPI } from "./types"
@@ -33,3 +34,6 @@ export const queryClientContext = createJSContext<QueryClient>()
 export const api = apiContext.consumer
 export const authClient = authClientContext.consumer
 export const queryClient = queryClientContext.consumer
+
+export const aiSettingsContext = createJSContext<() => AISettings | null>()
+export const getClientAISettings = aiSettingsContext.consumer
