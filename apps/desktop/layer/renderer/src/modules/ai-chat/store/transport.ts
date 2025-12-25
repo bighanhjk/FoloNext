@@ -69,10 +69,12 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
     // Import AI SDK functions
     const { chatStream, getModel } = await import("@follow/store/llm")
 
-    const config = getModel()
+    const modelState = getAIModelState()
+    const config = getModel(modelState.selectedModel || undefined)
+
     if (!config) {
       throw new Error(
-        "No BYOK provider configured. Please configure a BYOK provider in AI settings.",
+        "No BYOK provider configured or selected model is invalid. Please check AI settings.",
       )
     }
 
@@ -109,7 +111,7 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
     const result = await chatStream(simpleMessages, { signal: abortSignal })
 
     // Return the native UI message stream from AI SDK
-    return result.toUIMessageStream()
+    return result.toUIMessageStream() as ReadableStream<UIMessageChunk>
   }
 
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {

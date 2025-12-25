@@ -18,6 +18,11 @@ export const UsageAnalysisSection = () => {
   if (!config) return null
 
   const { usage, rateLimit } = config
+
+  if (!usage) {
+    return null
+  }
+
   const usagePercentage = usage.total === 0 ? 0 : (usage.used / usage.total) * 100
 
   return (

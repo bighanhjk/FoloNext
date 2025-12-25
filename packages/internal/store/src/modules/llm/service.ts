@@ -15,11 +15,33 @@ interface ModelConfig {
   modelName: string
 }
 
+// Helper to get display name for provider
+export function getProviderName(provider: string): string {
+  switch (provider) {
+    case "openai": {
+      return "OpenAI"
+    }
+    case "deepseek": {
+      return "DeepSeek"
+    }
+    case "google": {
+      return "Google"
+    }
+    case "local": {
+      return "Local"
+    }
+    default: {
+      return provider.charAt(0).toUpperCase() + provider.slice(1)
+    }
+  }
+}
+
 /**
  * Gets the configured AI SDK model based on BYOK settings.
  * Supports OpenAI, Deepseek, and Google (Gemini) providers.
+ * @param modelId Optional specific model ID (e.g., "byok/openai"). If omitted, picks first available.
  */
-export function getModel(): ModelConfig | null {
+export function getModel(modelId?: string): ModelConfig | null {
   let settings
   try {
     settings = getClientAISettings()()
@@ -29,47 +51,88 @@ export function getModel(): ModelConfig | null {
 
   if (!settings?.byok?.enabled) return null
 
-  const providers = settings.byok.providers.filter((p) => p.apiKey)
+  // Allow local provider without API key, others require it
+  const providers = settings.byok.providers.filter((p) => p.apiKey || p.provider === "local")
   if (providers.length === 0) return null
 
-  // Priority: OpenAI > Deepseek > Google
-  const openai = providers.find((p) => p.provider === "openai")
-  if (openai?.apiKey) {
-    const provider = createOpenAI({
-      apiKey: openai.apiKey,
-      baseURL: openai.baseURL || undefined,
-    })
-    return {
-      model: provider("gpt-4o-mini"),
-      providerId: "openai",
-      modelName: "gpt-4o-mini",
+  // If specific model requested, try to find it
+  let targetProviderType: ProviderType | "local" | undefined
+  if (modelId?.startsWith("byok/")) {
+    targetProviderType = modelId.split("/")[1] as ProviderType | "local"
+  }
+
+  // Helper to create config from provider setting
+  const createConfig = (p: (typeof providers)[0]): ModelConfig | null => {
+    switch (p.provider) {
+      case "openai": {
+        if (!p.apiKey) return null
+        return {
+          model: createOpenAI({
+            apiKey: p.apiKey,
+            baseURL: p.baseURL || undefined,
+          })("gpt-4o-mini"),
+          providerId: "openai",
+          modelName: "gpt-4o-mini",
+        }
+      }
+      case "deepseek": {
+        if (!p.apiKey) return null
+        return {
+          model: createDeepSeek({
+            apiKey: p.apiKey,
+            baseURL: p.baseURL || undefined,
+          })("deepseek-chat"),
+          providerId: "deepseek",
+          modelName: "deepseek-chat",
+        }
+      }
+      case "google": {
+        if (!p.apiKey) return null
+        return {
+          model: createGoogleGenerativeAI({
+            apiKey: p.apiKey,
+            baseURL: p.baseURL || undefined,
+          })("gemini-2.0-flash"),
+          providerId: "google",
+          modelName: "gemini-2.0-flash",
+        }
+      }
+      case "local": {
+        // For local, we default to OpenAI compatible interface for now (e.g. Ollama)
+        // This is a placeholder for future deeper local integration
+        if (!p.baseURL) return null
+        return {
+          model: createOpenAI({
+            apiKey: p.apiKey || "not-needed",
+            baseURL: p.baseURL,
+          })("llama3"), // Default local model name, user might need to config this later
+          providerId: "local" as any,
+          modelName: "local-model",
+        }
+      }
+      default: {
+        return null
+      }
     }
   }
 
-  const deepseek = providers.find((p) => p.provider === "deepseek")
-  if (deepseek?.apiKey) {
-    const provider = createDeepSeek({
-      apiKey: deepseek.apiKey,
-      baseURL: deepseek.baseURL || undefined,
-    })
-    return {
-      model: provider("deepseek-chat"),
-      providerId: "deepseek",
-      modelName: "deepseek-chat",
+  // If specific target requested
+  if (targetProviderType) {
+    const provider = providers.find((p) => p.provider === targetProviderType)
+    if (provider) {
+      return createConfig(provider)
     }
+    // If requested provider not found/valid, return null or fallback? returning null is safer for explicit choice
+    return null
   }
 
-  const google = providers.find((p) => p.provider === "google")
-  if (google?.apiKey) {
-    const provider = createGoogleGenerativeAI({
-      apiKey: google.apiKey,
-      baseURL: google.baseURL || undefined,
-    })
-    // Support Gemini 2.0 Flash as default, can be extended
-    return {
-      model: provider("gemini-2.0-flash"),
-      providerId: "google",
-      modelName: "gemini-2.0-flash",
+  // Fallback: Priority OpenAI > Deepseek > Google > Local
+  const order: (ProviderType | "local")[] = ["openai", "deepseek", "google", "local"]
+  for (const type of order) {
+    const p = providers.find((p) => p.provider === type)
+    if (p) {
+      const config = createConfig(p)
+      if (config) return config
     }
   }
 
