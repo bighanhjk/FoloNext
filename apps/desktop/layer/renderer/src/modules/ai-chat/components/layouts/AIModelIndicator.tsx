@@ -20,7 +20,7 @@ interface AIModelIndicatorProps {
   onModelChange?: (model: string) => void
 }
 
-type ProviderType = "openai" | "google" | "auto" | "deepseek" | "anthropic" | "moonshotai"
+type ProviderType = "openai" | "google" | "auto" | "deepseek" | "anthropic" | "moonshotai" | "byok"
 
 const providerIcons: Record<ProviderType, string> = {
   auto: "i-mgc-folo-bot-original size-4 -ml-0.5",
@@ -29,6 +29,7 @@ const providerIcons: Record<ProviderType, string> = {
   anthropic: "i-simple-icons-claude",
   deepseek: "i-mgc-deepseek-original",
   moonshotai: "i-mgc-moonshotai-original",
+  byok: "i-mgc-key-2-cute-re",
 }
 
 const MODEL_PAID_LEVELS = ["basic", "plus", "pro"] as const

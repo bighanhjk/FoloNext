@@ -66,6 +66,27 @@ abstract class BaseProvider implements LLMProvider {
       async start(controller) {
         const decoder = new TextDecoder()
         let buffer = ""
+        let isClosed = false
+
+        const safeEnqueue = (chunk: string) => {
+          if (!isClosed) {
+            controller.enqueue(chunk)
+          }
+        }
+
+        const safeClose = () => {
+          if (!isClosed) {
+            isClosed = true
+            controller.close()
+          }
+        }
+
+        const safeError = (e: unknown) => {
+          if (!isClosed) {
+            isClosed = true
+            controller.error(e)
+          }
+        }
 
         try {
           while (true) {
@@ -87,7 +108,7 @@ abstract class BaseProvider implements LLMProvider {
                 const json = JSON.parse(data)
                 const content = json.choices?.[0]?.delta?.content
                 if (content) {
-                  controller.enqueue(content)
+                  safeEnqueue(content)
                 }
               } catch (e) {
                 console.warn("Error parsing SSE data", e)
@@ -95,10 +116,10 @@ abstract class BaseProvider implements LLMProvider {
             }
           }
         } catch (e) {
-          controller.error(e)
-        } finally {
-          controller.close()
+          safeError(e)
+          return
         }
+        safeClose()
       },
     })
   }

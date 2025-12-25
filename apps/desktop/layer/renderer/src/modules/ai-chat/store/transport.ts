@@ -1,11 +1,18 @@
 import type { ParseResult } from "@ai-sdk/provider-utils"
 import { env } from "@follow/shared/env.desktop"
+import { llmService } from "@follow/store/llm"
 import type { BizUIMessage } from "@folo-services/ai-tools"
-import type { HttpChatTransportInitOptions, UIMessageChunk } from "ai"
+import type {
+  ChatRequestOptions,
+  ChatTransport,
+  HttpChatTransportInitOptions,
+  UIMessageChunk,
+} from "ai"
 import { HttpChatTransport, parseJsonEventStream, uiMessageChunkSchema } from "ai"
 
 import { getAIModelState } from "../atoms/session"
 import { AIPersistService } from "../services"
+import type { BizUIMessage as LocalBizUIMessage } from "./types"
 
 type TitleHandlerPersistOption = boolean | ((title: string) => void | Promise<void>)
 
@@ -42,10 +49,121 @@ export function createChatTitleHandler(
 }
 
 /**
+ * BYOK Chat Transport that uses local llmService instead of server API
+ */
+class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
+  constructor(
+    private options: {
+      onValue?: (value: UIMessageChunk) => void
+      titleHandler?: TitleHandlerOptions
+    } = {},
+  ) {}
+
+  async sendMessages({
+    messages,
+    abortSignal,
+  }: {
+    messages: LocalBizUIMessage[]
+    abortSignal?: AbortSignal
+  } & ChatRequestOptions): Promise<ReadableStream<UIMessageChunk>> {
+    const provider = llmService.getProvider()
+    if (!provider) {
+      throw new Error(
+        "No BYOK provider configured. Please configure a BYOK provider in AI settings.",
+      )
+    }
+
+    // Convert BizUIMessage to simple format for llmService
+    const simpleMessages = messages.map((msg) => {
+      // Try to extract text content from message parts first
+      let textContent = ""
+
+      if (msg.parts && Array.isArray(msg.parts)) {
+        textContent = msg.parts
+          .filter(
+            (part): part is { type: "text"; text: string } =>
+              part &&
+              typeof part === "object" &&
+              part.type === "text" &&
+              typeof part.text === "string",
+          )
+          .map((part) => part.text)
+          .join("\n")
+      }
+
+      // Fallback to content if available (for older message format)
+      if (!textContent && "content" in msg && typeof msg.content === "string") {
+        textContent = msg.content
+      }
+
+      return {
+        role: msg.role,
+        content: textContent,
+      }
+    })
+
+    // Get stream from BYOK provider
+    const textStream = await provider.chatStream(simpleMessages, { signal: abortSignal })
+
+    // Transform text stream to UIMessageChunk stream
+    const { onValue } = this.options
+    let isFirstChunk = true
+
+    return textStream.pipeThrough(
+      new TransformStream<string, UIMessageChunk>({
+        transform(chunk, controller) {
+          if (isFirstChunk) {
+            // Send start chunk
+            const startChunk: UIMessageChunk = {
+              type: "start",
+              messageId: crypto.randomUUID(),
+            }
+            onValue?.(startChunk)
+            controller.enqueue(startChunk)
+            isFirstChunk = false
+          }
+
+          // Send text delta chunk
+          const textChunk: UIMessageChunk = {
+            type: "text-delta",
+            delta: chunk,
+            id: "",
+          }
+          onValue?.(textChunk)
+          controller.enqueue(textChunk)
+        },
+        flush(controller) {
+          // Send finish chunk
+          const finishChunk: UIMessageChunk = {
+            type: "finish",
+            finishReason: "stop",
+          }
+          onValue?.(finishChunk)
+          controller.enqueue(finishChunk)
+        },
+      }),
+    )
+  }
+
+  async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
+    // BYOK doesn't support stream reconnection
+    return null
+  }
+}
+
+/**
  * Create a chat transport for AI SDK
  * This is used by the AbstractChat instance to communicate with AI providers
+ * Uses BYOK provider if available, otherwise falls back to server API
  */
 export function createChatTransport({ onValue, titleHandler }: CreateChatTransportOptions = {}) {
+  // Check if BYOK is available
+  const provider = llmService.getProvider()
+  if (provider) {
+    return new BYOKChatTransport({ onValue, titleHandler })
+  }
+
+  // Fallback to server transport (for paid users)
   return new ExtendChatTransport({
     onValue,
     titleHandler,

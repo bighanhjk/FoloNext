@@ -4,7 +4,7 @@ import {
   convertLexicalToMarkdown,
   getEditorStateJSONString,
 } from "@follow/components/ui/lexical-rich-editor/utils.js"
-import { isFreeRole } from "@follow/constants"
+import { llmService } from "@follow/store/llm"
 import { getCategoryFeedIds } from "@follow/store/subscription/getter"
 import { usePrefetchSummary } from "@follow/store/summary/hooks"
 import { useUserRole } from "@follow/store/user/hooks"
@@ -61,7 +61,7 @@ const ChatInterfaceContent = ({ centerInputOnEmpty }: ChatInterfaceProps) => {
   const error = useChatError()
   const messages = useMessages()
   const { ensureLogin } = useRequireLogin()
-  const userRole = useUserRole()
+  const _userRole = useUserRole()
 
   const isFocusWithin = useFocusable()
 
@@ -257,7 +257,7 @@ const ChatInterfaceContent = ({ centerInputOnEmpty }: ChatInterfaceProps) => {
   const { handleScroll } = useAttachScrollBeyond()
 
   const { data: configuration } = useAIConfiguration()
-  const shouldHideResetDetails = userRole ? isFreeRole(userRole) : false
+  const shouldHideResetDetails = false // All users can see details now
 
   const { isRateLimited, rateLimitMessage } = useRateLimitInfo(
     error,
@@ -392,20 +392,24 @@ const useChatDraft = (currentChatId?: string | null) => {
 const useRateLimitInfo = (
   error: Error | string | undefined,
   configuration: ConfigResponse | undefined,
-  shouldHideResetDetails: boolean,
+  _shouldHideResetDetails: boolean,
 ) => {
-  const isRateLimited = useMemo(
-    () => computeIsRateLimited(error, configuration),
-    [error, configuration],
-  )
+  // When using BYOK, bypass server rate limiting entirely
+  const hasByokProvider = !!llmService.getProvider()
 
-  const rateLimitMessage = useMemo(
-    () =>
-      computeRateLimitMessage(error, configuration, {
-        hideResetDetails: shouldHideResetDetails,
-      }),
-    [error, configuration, shouldHideResetDetails],
-  )
+  const isRateLimited = useMemo(() => {
+    // If BYOK provider is configured, never rate limit from server
+    if (hasByokProvider) return false
+    return computeIsRateLimited(error, configuration)
+  }, [error, configuration, hasByokProvider])
+
+  const rateLimitMessage = useMemo(() => {
+    // If BYOK provider is configured, no rate limit message
+    if (hasByokProvider) return null
+    return computeRateLimitMessage(error, configuration, {
+      hideResetDetails: false,
+    })
+  }, [error, configuration, hasByokProvider])
 
   return {
     isRateLimited,
