@@ -109,6 +109,9 @@
     "react": "19.0.0"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "2.0.1",
+    "@ai-sdk/google": "3.0.1",
+    "@ai-sdk/openai": "3.0.1",
     "@follow-app/client-sdk": "catalog:",
     "@follow/configs": "workspace:*",
     "@follow/constants": "workspace:*",
@@ -118,6 +121,7 @@
     "@follow/tracker": "workspace:*",
     "@follow/utils": "workspace:*",
     "@tanstack/react-query": "5.90.6",
+    "ai": "6.0.3",
     "es-toolkit": "1.41.0",
     "immer": "10.2.0",
     "zustand": "5.0.8"

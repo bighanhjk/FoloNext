@@ -4,7 +4,7 @@ import {
   convertLexicalToMarkdown,
   getEditorStateJSONString,
 } from "@follow/components/ui/lexical-rich-editor/utils.js"
-import { llmService } from "@follow/store/llm"
+import { hasProvider } from "@follow/store/llm"
 import { getCategoryFeedIds } from "@follow/store/subscription/getter"
 import { usePrefetchSummary } from "@follow/store/summary/hooks"
 import { useUserRole } from "@follow/store/user/hooks"
@@ -394,8 +394,8 @@ const useRateLimitInfo = (
   configuration: ConfigResponse | undefined,
   _shouldHideResetDetails: boolean,
 ) => {
-  // When using BYOK, bypass server rate limiting entirely
-  const hasByokProvider = !!llmService.getProvider()
+  // If we have a BYOK provider, we bypass all rate limits
+  const hasByokProvider = hasProvider()
 
   const isRateLimited = useMemo(() => {
     // If BYOK provider is configured, never rate limit from server

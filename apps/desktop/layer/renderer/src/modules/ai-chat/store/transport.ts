@@ -1,6 +1,6 @@
 import type { ParseResult } from "@ai-sdk/provider-utils"
 import { env } from "@follow/shared/env.desktop"
-import { llmService } from "@follow/store/llm"
+import { hasProvider } from "@follow/store/llm"
 import type { BizUIMessage } from "@folo-services/ai-tools"
 import type {
   ChatRequestOptions,
@@ -49,7 +49,7 @@ export function createChatTitleHandler(
 }
 
 /**
- * BYOK Chat Transport that uses local llmService instead of server API
+ * BYOK Chat Transport that uses AI SDK streamText instead of server API
  */
 class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
   constructor(
@@ -66,14 +66,17 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
     messages: LocalBizUIMessage[]
     abortSignal?: AbortSignal
   } & ChatRequestOptions): Promise<ReadableStream<UIMessageChunk>> {
-    const provider = llmService.getProvider()
-    if (!provider) {
+    // Import AI SDK functions
+    const { chatStream, getModel } = await import("@follow/store/llm")
+
+    const config = getModel()
+    if (!config) {
       throw new Error(
         "No BYOK provider configured. Please configure a BYOK provider in AI settings.",
       )
     }
 
-    // Convert BizUIMessage to simple format for llmService
+    // Convert BizUIMessage to AI SDK message format
     const simpleMessages = messages.map((msg) => {
       // Try to extract text content from message parts first
       let textContent = ""
@@ -97,52 +100,16 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
       }
 
       return {
-        role: msg.role,
+        role: msg.role as "user" | "assistant" | "system",
         content: textContent,
       }
     })
 
-    // Get stream from BYOK provider
-    const textStream = await provider.chatStream(simpleMessages, { signal: abortSignal })
+    // Use AI SDK streamText and get UI message stream
+    const result = await chatStream(simpleMessages, { signal: abortSignal })
 
-    // Transform text stream to UIMessageChunk stream
-    const { onValue } = this.options
-    let isFirstChunk = true
-
-    return textStream.pipeThrough(
-      new TransformStream<string, UIMessageChunk>({
-        transform(chunk, controller) {
-          if (isFirstChunk) {
-            // Send start chunk
-            const startChunk: UIMessageChunk = {
-              type: "start",
-              messageId: crypto.randomUUID(),
-            }
-            onValue?.(startChunk)
-            controller.enqueue(startChunk)
-            isFirstChunk = false
-          }
-
-          // Send text delta chunk
-          const textChunk: UIMessageChunk = {
-            type: "text-delta",
-            delta: chunk,
-            id: "",
-          }
-          onValue?.(textChunk)
-          controller.enqueue(textChunk)
-        },
-        flush(controller) {
-          // Send finish chunk
-          const finishChunk: UIMessageChunk = {
-            type: "finish",
-            finishReason: "stop",
-          }
-          onValue?.(finishChunk)
-          controller.enqueue(finishChunk)
-        },
-      }),
-    )
+    // Return the native UI message stream from AI SDK
+    return result.toUIMessageStream()
   }
 
   async reconnectToStream(): Promise<ReadableStream<UIMessageChunk> | null> {
@@ -158,8 +125,7 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
  */
 export function createChatTransport({ onValue, titleHandler }: CreateChatTransportOptions = {}) {
   // Check if BYOK is available
-  const provider = llmService.getProvider()
-  if (provider) {
+  if (hasProvider()) {
     return new BYOKChatTransport({ onValue, titleHandler })
   }
 

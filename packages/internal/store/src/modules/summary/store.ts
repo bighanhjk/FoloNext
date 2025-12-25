@@ -5,7 +5,7 @@ import type { SupportedActionLanguage } from "@follow/shared"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { getEntry } from "../entry/getter"
-import { llmService } from "../llm/service"
+import { generateSummary, hasProvider } from "../llm/service"
 import { SummaryGeneratingStatus } from "./enum"
 import type { StatusID } from "./utils"
 import { getGenerateSummaryStatusId } from "./utils"
@@ -169,17 +169,15 @@ class SummarySyncService {
     })
 
     const run = async () => {
-      // 1. Try Client-Side Generation if provider is configured
-      const provider = llmService.getProvider()
-
-      if (provider) {
+      // 1. Try Client-Side Generation if BYOK provider is configured
+      if (hasProvider()) {
         if (!entry.content) {
-          // TODO: Maby trigger content fetch here?
+          // TODO: Maybe trigger content fetch here?
           throw new Error("Content not loaded for client-side summary")
         }
 
         try {
-          const summary = await provider.generateSummary(entry.content, actionLanguage)
+          const summary = await generateSummary(entry.content, actionLanguage)
           if (summary) {
             return { data: summary }
           }

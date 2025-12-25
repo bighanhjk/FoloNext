@@ -1,4 +1,4 @@
-import { llmService } from "@follow/store/llm"
+import { getModel, hasProvider } from "@follow/store/llm"
 import { useEffect, useMemo } from "react"
 
 import { setAIModelState, useAIModelState } from "../atoms/session"
@@ -12,7 +12,7 @@ export const useAIModel = () => {
   const modelState = useAIModelState()
 
   // Check if BYOK provider is available
-  const hasByokProvider = !!llmService.getProvider()
+  const hasByokProvider = hasProvider()
 
   // Validate and sync persistent model with available models
   useEffect(() => {
@@ -65,9 +65,9 @@ export const useAIModel = () => {
   const availableModelsMenu = useMemo(() => {
     const serverMenu = configuration?.availableModelsMenu || []
     if (hasByokProvider) {
-      const provider = llmService.getProvider()
+      const config = getModel()
       const byokMenuItem = {
-        label: `BYOK (${provider?.id || "Local"})`,
+        label: `BYOK (${config?.providerId || "Local"})`,
         value: BYOK_MODEL_ID,
         group: "BYOK - Bring Your Own Key",
         paidLevel: undefined as string | undefined,

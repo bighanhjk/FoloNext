@@ -9,7 +9,7 @@ import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { readNdjsonStream } from "../../lib/stream"
 import { getEntry } from "../entry/getter"
-import { llmService } from "../llm/service"
+import { generateTranslation, hasProvider } from "../llm/service"
 import type { EntryTranslation, TranslationFieldArray, TranslationMode } from "./types"
 import { translationFields } from "./types"
 
@@ -252,15 +252,14 @@ class TranslationSyncService {
     if (fields.length === 0) return null
 
     // 1. Try BYOK provider first
-    const provider = llmService.getProvider()
-    if (provider) {
+    if (hasProvider()) {
       try {
         const translations: Partial<Record<keyof TranslationModel, string>> = {}
 
         for (const field of fields) {
           const content = entry[field]
           if (content) {
-            const translated = await provider.generateTranslation(content, language)
+            const translated = await generateTranslation(content, language)
             translations[field] = translated
           }
         }
