@@ -49,6 +49,18 @@ export const DetailedUsageModal = () => {
   }
 
   const { usage, rateLimit } = config
+
+  // BYOK mode doesn't have usage data
+  if (!usage) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <div className="text-sm text-text-secondary">
+          Usage analytics are not available in BYOK mode.
+        </div>
+      </div>
+    )
+  }
+
   const usagePercentage = usage.total === 0 ? 0 : (usage.used / usage.total) * 100
 
   // Build derived datasets for inline charts

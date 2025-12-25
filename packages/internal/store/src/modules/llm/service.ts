@@ -52,7 +52,9 @@ export function getModel(modelId?: string): ModelConfig | null {
   if (!settings?.byok?.enabled) return null
 
   // Allow local provider without API key, others require it
-  const providers = settings.byok.providers.filter((p) => p.apiKey || p.provider === "local")
+  const providers = settings.byok.providers.filter(
+    (p) => p.apiKey || (p.provider as string) === "local",
+  )
   if (providers.length === 0) return null
 
   // If specific model requested, try to find it
@@ -63,7 +65,7 @@ export function getModel(modelId?: string): ModelConfig | null {
 
   // Helper to create config from provider setting
   const createConfig = (p: (typeof providers)[0]): ModelConfig | null => {
-    switch (p.provider) {
+    switch (p.provider as string) {
       case "openai": {
         if (!p.apiKey) return null
         return {
@@ -238,9 +240,9 @@ export async function generateTranslation(
  */
 export async function chatStream(
   messages: Array<{ role: "user" | "assistant" | "system"; content: string }>,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; modelId?: string },
 ) {
-  const config = getModel()
+  const config = getModel(options?.modelId)
   if (!config) {
     throw new Error("No BYOK provider configured. Please configure a BYOK provider in AI settings.")
   }

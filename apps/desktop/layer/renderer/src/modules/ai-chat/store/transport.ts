@@ -59,6 +59,89 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
     } = {},
   ) {}
 
+  /**
+   * Extract context information from data-block parts
+   */
+  private extractContextFromBlocks(messages: LocalBizUIMessage[]): {
+    entryId?: string
+    feedId?: string
+  } {
+    // Look for data-block parts in user messages
+    for (const msg of messages) {
+      if (msg.role !== "user" || !msg.parts) continue
+
+      for (const part of msg.parts) {
+        if (
+          part &&
+          typeof part === "object" &&
+          part.type === "data-block" &&
+          "data" in part &&
+          Array.isArray(part.data)
+        ) {
+          for (const block of part.data) {
+            if (block.type === "mainEntry" && block.value) {
+              return { entryId: block.value }
+            }
+            if (block.type === "mainFeed" && block.value) {
+              return { feedId: block.value }
+            }
+          }
+        }
+      }
+    }
+    return {}
+  }
+
+  /**
+   * Build system prompt with article context
+   */
+  private async buildContextPrompt(entryId?: string): Promise<string | null> {
+    if (!entryId) return null
+
+    // Dynamically import to avoid circular dependencies
+    const { getEntry } = await import("@follow/store/entry/getter")
+    const { useSummaryStore } = await import("@follow/store/summary/store")
+
+    const entry = getEntry(entryId)
+    if (!entry) return null
+
+    const parts: string[] = []
+
+    // Add article metadata
+    if (entry.title) {
+      parts.push(`**Article Title:** ${entry.title}`)
+    }
+    if (entry.url) {
+      parts.push(`**URL:** ${entry.url}`)
+    }
+    if (entry.author) {
+      parts.push(`**Author:** ${entry.author}`)
+    }
+
+    // Add summary if available
+    const summaryState = useSummaryStore.getState()
+    const languages = Object.keys(summaryState.data[entryId] || {}) as Array<
+      keyof (typeof summaryState.data)[string]
+    >
+    for (const lang of languages) {
+      const summaryData = summaryState.data[entryId]?.[lang]
+      if (summaryData?.summary) {
+        parts.push(`**Summary (${String(lang)}):** ${summaryData.summary}`)
+        break // Use first available summary
+      }
+    }
+
+    // Add content (truncated for context window)
+    if (entry.content) {
+      const truncatedContent = entry.content.slice(0, 8000)
+      parts.push(`**Article Content:**\n${truncatedContent}`)
+    }
+
+    if (parts.length === 0) return null
+
+    return `You are a helpful assistant discussing the following article:\n\n${parts.join("\n\n")}\n\nPlease answer user questions based on this context.`
+  }
+
   async sendMessages({
     messages,
     abortSignal,
@@ -78,21 +161,48 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
       )
     }
 
+    // Extract context from data-block
+    const { entryId } = this.extractContextFromBlocks(messages)
+    const contextPrompt = await this.buildContextPrompt(entryId)
+
     // Convert BizUIMessage to AI SDK message format
-    const simpleMessages = messages.map((msg) => {
-      // Try to extract text content from message parts first
+    const simpleMessages: Array<{ role: "user" | "assistant" | "system"; content: string }> = []
+
+    // Add context as system message if available
+    if (contextPrompt) {
+      simpleMessages.push({
+        role: "system",
+        content: contextPrompt,
+      })
+    }
+
+    // Process user/assistant messages
+    for (const msg of messages) {
       let textContent = ""
 
       if (msg.parts && Array.isArray(msg.parts)) {
         textContent = msg.parts
-          .filter(
-            (part): part is { type: "text"; text: string } =>
-              part &&
-              typeof part === "object" &&
-              part.type === "text" &&
-              typeof part.text === "string",
-          )
-          .map((part) => part.text)
+          .map((part) => {
+            if (part && typeof part === "object") {
+              // Handle newer data-rich-text format
+              if (
+                part.type === "data-rich-text" &&
+                part.data &&
+                typeof part.data === "object" &&
+                "text" in part.data &&
+                typeof part.data.text === "string"
+              ) {
+                return part.data.text
+              }
+
+              // Handle simple text format
+              if (part.type === "text" && "text" in part && typeof part.text === "string") {
+                return part.text
+              }
+            }
+            return ""
+          })
+          .filter(Boolean)
           .join("\n")
       }
 
@@ -101,14 +211,19 @@ class BYOKChatTransport implements ChatTransport<LocalBizUIMessage> {
         textContent = msg.content
       }
 
-      return {
-        role: msg.role as "user" | "assistant" | "system",
-        content: textContent,
+      if (textContent) {
+        simpleMessages.push({
+          role: msg.role as "user" | "assistant" | "system",
+          content: textContent,
+        })
       }
-    })
+    }
 
     // Use AI SDK streamText and get UI message stream
-    const result = await chatStream(simpleMessages, { signal: abortSignal })
+    const result = await chatStream(simpleMessages, {
+      signal: abortSignal,
+      modelId: modelState.selectedModel || undefined,
+    })
 
     // Return the native UI message stream from AI SDK
     return result.toUIMessageStream() as ReadableStream<UIMessageChunk>

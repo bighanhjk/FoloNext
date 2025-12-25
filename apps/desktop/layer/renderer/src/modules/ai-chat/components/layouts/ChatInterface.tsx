@@ -261,7 +261,7 @@ const ChatInterfaceContent = ({ centerInputOnEmpty }: ChatInterfaceProps) => {
 
   const { isRateLimited, rateLimitMessage } = useRateLimitInfo(
     error,
-    configuration,
+    configuration as any,
     shouldHideResetDetails,
   )
 
@@ -391,7 +391,7 @@ const useChatDraft = (currentChatId?: string | null) => {
 
 const useRateLimitInfo = (
   error: Error | string | undefined,
-  configuration: ConfigResponse | undefined,
+  configuration: Partial<ConfigResponse> | undefined,
   _shouldHideResetDetails: boolean,
 ) => {
   // If we have a BYOK provider, we bypass all rate limits
