@@ -32,6 +32,8 @@ interface AISummaryCardBaseProps {
   showAskAIButton?: boolean
   /** Callback when Ask AI button is clicked */
   onAskAI?: () => void
+  /** Callback when retry button is clicked */
+  onRetry?: () => void
 
   error?: Error | null
 }
@@ -47,9 +49,11 @@ const DefaultLoadingState = () => (
 const DefaultEmptyState = ({
   message,
   shouldSuggestUpgrade,
+  onRetry,
 }: {
   message: string
   shouldSuggestUpgrade?: boolean
+  onRetry?: () => void
 }) => {
   const settingModalPresent = useSettingModal()
   const { t } = useTranslation("app")
@@ -88,8 +92,26 @@ const DefaultEmptyState = ({
   }
 
   return (
-    <div className="text-center">
+    <div className="flex flex-col items-center gap-3">
       <p className="text-sm text-text-secondary">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className={cn(
+            "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium",
+            "bg-gradient-to-r from-purple-500/10 to-blue-500/10",
+            "border border-purple-200/30 dark:border-purple-800/30",
+            "text-purple-600 dark:text-purple-400",
+            "hover:from-purple-500/20 hover:to-blue-500/20",
+            "hover:border-purple-300/50 dark:hover:border-purple-700/50",
+            "transition-all duration-200",
+          )}
+        >
+          <i className="i-mgc-refresh-2-cute-re text-base" />
+          <span>{t("ai.summary_retry")}</span>
+        </button>
+      )}
     </div>
   )
 }
@@ -105,6 +127,7 @@ export const AISummaryCardBase: React.FC<AISummaryCardBaseProps> = ({
   showCopyButton = true,
   showAskAIButton = false,
   onAskAI,
+  onRetry,
   error,
 }) => {
   const { t } = useTranslation("app")
@@ -224,6 +247,8 @@ export const AISummaryCardBase: React.FC<AISummaryCardBaseProps> = ({
             message={t("ai.summary_upgrade_required_title")}
             shouldSuggestUpgrade
           />
+        ) : error ? (
+          <DefaultEmptyState message={t("ai.summary_generation_failed")} onRetry={onRetry} />
         ) : (
           <DefaultEmptyState message={t("ai.summary_not_available")} />
         )}

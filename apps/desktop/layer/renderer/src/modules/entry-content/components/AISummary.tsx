@@ -56,6 +56,7 @@ export function AISummary({ entryId }: { entryId: string }) {
       showAskAIButton={shouldShowAskAI}
       onAskAI={handleAskAI}
       error={summary.error}
+      onRetry={() => summary.refetch()}
     />
   )
 }
