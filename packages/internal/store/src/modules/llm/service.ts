@@ -5,6 +5,7 @@ import { getClientAISettings } from "../../context"
 interface LLMProvider {
   id: string
   generateSummary: (content: string, language: SupportedActionLanguage) => Promise<string>
+  generateTranslation: (content: string, targetLanguage: SupportedActionLanguage) => Promise<string>
   chatStream: (
     messages: { role: string; content: string }[],
     options?: { signal?: AbortSignal },
@@ -153,6 +154,83 @@ abstract class BaseProvider implements LLMProvider {
       }
       default: {
         return "Please summarize the following content"
+      }
+    }
+  }
+
+  async generateTranslation(
+    content: string,
+    targetLanguage: SupportedActionLanguage,
+  ): Promise<string> {
+    const prompt = this.getTranslationPrompt(targetLanguage)
+
+    try {
+      const response = await fetch(this.getChatEndpoint(), {
+        method: "POST",
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          model: this.modelName,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a professional translator. Translate the given text accurately while preserving the original meaning and tone. Output only the translated text without any introduction or explanation.",
+            },
+            {
+              role: "user",
+              content: `${prompt}:\n\n${content.slice(0, 12000)}`,
+            },
+          ],
+          stream: false,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`${this.id} API Error: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      return data.choices?.[0]?.message?.content?.trim() || ""
+    } catch (error) {
+      console.error(`${this.id} translation generation failed:`, error)
+      throw error
+    }
+  }
+
+  private getTranslationPrompt(language: SupportedActionLanguage): string {
+    switch (language) {
+      case "en": {
+        return "Translate the following text to English"
+      }
+      case "zh-CN": {
+        return "将以下文本翻译成简体中文"
+      }
+      case "zh-TW": {
+        return "將以下文本翻譯成繁體中文"
+      }
+      case "ja": {
+        return "以下のテキストを日本語に翻訳してください"
+      }
+      case "fr": {
+        return "Traduisez le texte suivant en français"
+      }
+      case "de": {
+        return "Übersetzen Sie den folgenden Text ins Deutsche"
+      }
+      case "es": {
+        return "Traduzca el siguiente texto al español"
+      }
+      case "pt": {
+        return "Traduza o seguinte texto para português"
+      }
+      case "ko": {
+        return "다음 텍스트를 한국어로 번역해 주세요"
+      }
+      case "ru": {
+        return "Переведите следующий текст на русский язык"
+      }
+      default: {
+        return `Translate the following text to ${language}`
       }
     }
   }

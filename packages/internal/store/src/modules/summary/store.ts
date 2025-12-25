@@ -2,7 +2,6 @@ import type { SummarySchema } from "@follow/database/schemas/types"
 import { summaryService } from "@follow/database/services/summary"
 import type { SupportedActionLanguage } from "@follow/shared"
 
-import { api } from "../../context"
 import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { getEntry } from "../entry/getter"
@@ -192,12 +191,8 @@ class SummarySyncService {
         }
       }
 
-      // 2. Fallback to Server (only if no BYOK provider)
-      return api().ai.summary({
-        id: entryId,
-        language: actionLanguage,
-        target,
-      })
+      // 2. No BYOK provider configured - throw error
+      throw new Error("No AI provider configured. Please configure a BYOK provider in settings.")
     }
 
     // Use Our AI to generate summary

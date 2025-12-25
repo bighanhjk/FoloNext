@@ -1,6 +1,5 @@
 /* eslint-disable @eslint-react/no-array-index-key */
-import { UserRole } from "@follow/constants"
-import { SettingPaidLevels } from "@follow/shared/settings/constants"
+import type { SettingPaidLevels } from "@follow/shared/settings/constants"
 import { useUserRole } from "@follow/store/user/hooks"
 import type { FC, ReactNode } from "react"
 import * as React from "react"
@@ -60,7 +59,7 @@ export const createSettingBuilder =
   }) => {
     const { settings } = props
     const settingObject = useSetting()
-    const role = useUserRole()
+    const _role = useUserRole()
 
     const filteredSettings = settings.filter((i) => !!i)
     return filteredSettings.map((setting, index) => {
@@ -97,12 +96,7 @@ export const createSettingBuilder =
       if ("type" in assertSetting && assertSetting.type === "title") {
         return null
       }
-      const disabledForRole =
-        role === UserRole.Free &&
-        "paidLevel" in assertSetting &&
-        assertSetting.paidLevel !== undefined &&
-        assertSetting.paidLevel !== SettingPaidLevels.Free &&
-        assertSetting.paidLevel !== SettingPaidLevels.FreeLimited
+      const disabledForRole = false
 
       let ControlElement: React.ReactNode
 

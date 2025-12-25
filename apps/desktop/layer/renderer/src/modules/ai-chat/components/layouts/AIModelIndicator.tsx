@@ -1,5 +1,4 @@
 import type { UserRole } from "@follow/constants"
-import { UserRolePriority } from "@follow/constants"
 import { useUserRole } from "@follow/store/user/hooks"
 import { cn } from "@follow/utils"
 import { Fragment, memo, useMemo } from "react"
@@ -35,7 +34,7 @@ const providerIcons: Record<ProviderType, string> = {
 const MODEL_PAID_LEVELS = ["basic", "plus", "pro"] as const
 type ModelPaidLevel = (typeof MODEL_PAID_LEVELS)[number]
 
-const paidLevelPriority: Record<ModelPaidLevel, number> = {
+const _paidLevelPriority: Record<ModelPaidLevel, number> = {
   basic: 1,
   plus: 2,
   pro: 3,
@@ -57,10 +56,9 @@ const isModelPaidLevel = (value: unknown): value is ModelPaidLevel => {
   return typeof value === "string" && MODEL_PAID_LEVELS.includes(value as ModelPaidLevel)
 }
 
-const hasAccessToPaidLevel = (role: UserRole | null | undefined, level?: ModelPaidLevel) => {
-  if (!level) return true
-  const roleScore = role ? (UserRolePriority[role] ?? 0) : 0
-  return roleScore >= paidLevelPriority[level]
+const hasAccessToPaidLevel = (_role: UserRole | null | undefined, _level?: ModelPaidLevel) => {
+  // All users now have access to all models (subscription check removed)
+  return true
 }
 
 const parseModelString = (modelString: string) => {

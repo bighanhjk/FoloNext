@@ -1,4 +1,3 @@
-import { UserRole } from "@follow/constants"
 import type { TranslationSchema } from "@follow/database/schemas/types"
 import { TranslationService } from "@follow/database/services/translation"
 import type { SupportedActionLanguage } from "@follow/shared"
@@ -10,7 +9,7 @@ import type { Hydratable, Resetable } from "../../lib/base"
 import { createImmerSetter, createTransaction, createZustandStore } from "../../lib/helper"
 import { readNdjsonStream } from "../../lib/stream"
 import { getEntry } from "../entry/getter"
-import { useUserStore } from "../user/store"
+import { llmService } from "../llm/service"
 import type { EntryTranslation, TranslationFieldArray, TranslationMode } from "./types"
 import { translationFields } from "./types"
 
@@ -228,15 +227,12 @@ class TranslationSyncService {
     target: "content" | "readabilityContent"
     mode?: TranslationMode
   }) {
-    const userRole = useUserStore.getState().role
-
-    if (userRole === UserRole.Free) return null
     const translationMode = mode ?? "bilingual"
     await this.ensureMode(translationMode)
 
     const entry = getEntry(entryId)
 
-    if (!entry) return
+    if (!entry) return null
     const translationSession = translationActions.getTranslation(entryId, language)
 
     const fields = (
@@ -255,6 +251,38 @@ class TranslationSyncService {
 
     if (fields.length === 0) return null
 
+    // 1. Try BYOK provider first
+    const provider = llmService.getProvider()
+    if (provider) {
+      try {
+        const translations: Partial<Record<keyof TranslationModel, string>> = {}
+
+        for (const field of fields) {
+          const content = entry[field]
+          if (content) {
+            const translated = await provider.generateTranslation(content, language)
+            translations[field] = translated
+          }
+        }
+
+        const translation: TranslationModel = {
+          entryId,
+          language,
+          title: translations.title || null,
+          description: translations.description || null,
+          content: translations.content || null,
+          readabilityContent: translations.readabilityContent || null,
+        }
+
+        await translationActions.upsertMany([translation])
+        return translation
+      } catch (e) {
+        console.error("BYOK translation failed:", e)
+        throw e
+      }
+    }
+
+    // 2. Fallback to server API (only if no BYOK)
     const key = `${entryId}|${language}|${target}|${fields.join(",")}|${translationMode}`
     const result = await this.translationBatcher.fetch(key)
     return result || null

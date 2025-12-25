@@ -1,9 +1,7 @@
 import { ResponsiveSelect } from "@follow/components/ui/select/responsive.js"
-import { UserRole } from "@follow/constants"
 import { useTypeScriptHappyCallback } from "@follow/hooks"
 import { ACTION_LANGUAGE_MAP } from "@follow/shared"
 import { IN_ELECTRON } from "@follow/shared/constants"
-import { useUserRole } from "@follow/store/user/hooks"
 import { cn } from "@follow/utils/utils"
 import { useQuery } from "@tanstack/react-query"
 import dayjs from "dayjs"
@@ -14,7 +12,6 @@ import { useTranslation } from "react-i18next"
 import { currentSupportedLanguages } from "~/@types/constants"
 import { defaultResources } from "~/@types/default-resource"
 import { langLoadingLockMapAtom } from "~/atoms/lang"
-import { useIsPaymentEnabled } from "~/atoms/server-configs"
 import {
   DEFAULT_ACTION_LANGUAGE,
   setGeneralSetting,
@@ -298,9 +295,7 @@ export const LanguageSelector = ({
 const TranslationModeSelector = () => {
   const { t } = useTranslation("settings")
   const translationMode = useGeneralSettingKey("translationMode")
-  const role = useUserRole()
-  const isPaymentEnabled = useIsPaymentEnabled()
-  const disabledForRole = role === UserRole.Free && isPaymentEnabled
+  const disabledForRole = false
 
   return (
     <>

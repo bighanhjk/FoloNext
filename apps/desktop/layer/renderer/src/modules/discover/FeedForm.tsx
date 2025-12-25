@@ -19,13 +19,13 @@ import {
   TooltipPortal,
   TooltipTrigger,
 } from "@follow/components/ui/tooltip/index.js"
-import { FeedViewType, UserRole } from "@follow/constants"
+import { FeedViewType } from "@follow/constants"
 import { useFeedByIdOrUrl } from "@follow/store/feed/hooks"
 import type { FeedModel } from "@follow/store/feed/types"
 import { useCategories, useSubscriptionByFeedId } from "@follow/store/subscription/hooks"
 import { subscriptionSyncService } from "@follow/store/subscription/store"
 import { whoami } from "@follow/store/user/getters"
-import { useIsLoggedIn, useUserRole } from "@follow/store/user/hooks"
+import { useIsLoggedIn } from "@follow/store/user/hooks"
 import { tracker } from "@follow/tracker"
 import { cn } from "@follow/utils/utils"
 import type { FeedAnalyticsModel, ParsedEntry } from "@follow-app/client-sdk"
@@ -337,9 +337,7 @@ const FeedInnerForm = ({
     form.setValue("title", feed.title || "")
   }, [feed.title, form])
 
-  const role = useUserRole()
-  const isPaymentEnabled = useIsPaymentEnabled()
-  const disabledForRole = role === UserRole.Free && isPaymentEnabled
+  const disabledForRole = false
 
   return (
     <div className="flex flex-1 flex-col gap-y-4">

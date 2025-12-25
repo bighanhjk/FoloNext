@@ -17,8 +17,6 @@ type PartialRecord<K extends PropertyKey, V> = Partial<Record<K, V>>
 export const PAID_SETTINGS = {
   general: {
     summary: SettingPaidLevels.FreeLimited,
-    translation: SettingPaidLevels.Basic,
-    translationMode: SettingPaidLevels.Basic,
     hidePrivateSubscriptionsInTimeline: SettingPaidLevels.Basic,
   },
   ui: {
