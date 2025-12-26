@@ -7,6 +7,7 @@ import {
   aiSettingsContext,
   apiContext,
   authClientContext,
+  byokFetchContext,
   queryClientContext,
 } from "@follow/store/context"
 import { getOS } from "@follow/utils/utils"
@@ -23,6 +24,7 @@ import { ElECTRON_CUSTOM_TITLEBAR_HEIGHT } from "./constants"
 import { initializeApp } from "./initialize"
 import { registerAppGlobalShortcuts } from "./initialize/global-shortcuts"
 import { followApi } from "./lib/api-client"
+import { byokFetch } from "./lib/byok-fetch"
 import { queryClient } from "./lib/query-client"
 import { router } from "./router"
 
@@ -31,6 +33,7 @@ authClientContext.provide(authClient)
 queryClientContext.provide(queryClient)
 apiContext.provide(followApi)
 aiSettingsContext.provide(() => getAISettings())
+byokFetchContext.provide(byokFetch)
 
 initializeApp().finally(() => {
   import("./push-notification").then(({ registerWebPushNotifications }) => {

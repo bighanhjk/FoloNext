@@ -293,7 +293,7 @@ class WindowManagerStatic {
         preload: this.config.windowPreferences.preloadScript,
         sandbox: false,
         webviewTag: true,
-        webSecurity: !DEV,
+        webSecurity: !DEV, // Disabled in dev for testing; BYOK uses IPC proxy in production
         nodeIntegration: true,
         contextIsolation: false,
       },

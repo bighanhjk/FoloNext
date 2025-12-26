@@ -4,7 +4,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import type { SupportedActionLanguage } from "@follow/shared"
 import { generateText, streamText } from "ai"
 
-import { getClientAISettings } from "../../context"
+import { getByokFetch, getClientAISettings } from "../../context"
 
 // Provider types supported
 type ProviderType = "openai" | "google" | "deepseek"
@@ -65,51 +65,61 @@ export function getModel(modelId?: string): ModelConfig | null {
 
   // Helper to create config from provider setting
   const createConfig = (p: (typeof providers)[0]): ModelConfig | null => {
+    const customFetch = getByokFetch()
+
     switch (p.provider as string) {
       case "openai": {
         if (!p.apiKey) return null
+        const modelName = p.modelName || "gpt-4o-mini"
         return {
           model: createOpenAI({
             apiKey: p.apiKey,
             baseURL: p.baseURL || undefined,
-          })("gpt-4o-mini"),
+            fetch: customFetch,
+          })(modelName),
           providerId: "openai",
-          modelName: "gpt-4o-mini",
+          modelName,
         }
       }
       case "deepseek": {
         if (!p.apiKey) return null
+        const modelName = p.modelName || "deepseek-chat"
         return {
           model: createDeepSeek({
             apiKey: p.apiKey,
             baseURL: p.baseURL || undefined,
-          })("deepseek-chat"),
+            fetch: customFetch,
+          })(modelName),
           providerId: "deepseek",
-          modelName: "deepseek-chat",
+          modelName,
         }
       }
       case "google": {
         if (!p.apiKey) return null
+        const modelName = p.modelName || "gemini-2.0-flash"
         return {
           model: createGoogleGenerativeAI({
             apiKey: p.apiKey,
             baseURL: p.baseURL || undefined,
-          })("gemini-2.0-flash"),
+            fetch: customFetch,
+          })(modelName),
           providerId: "google",
-          modelName: "gemini-2.0-flash",
+          modelName,
         }
       }
       case "local": {
         // For local, we default to OpenAI compatible interface for now (e.g. Ollama)
         // This is a placeholder for future deeper local integration
         if (!p.baseURL) return null
+        const modelName = p.modelName || "llama3"
         return {
           model: createOpenAI({
             apiKey: p.apiKey || "not-needed",
             baseURL: p.baseURL,
-          })("llama3"), // Default local model name, user might need to config this later
+            fetch: customFetch,
+          })(modelName),
           providerId: "local" as any,
-          modelName: "local-model",
+          modelName,
         }
       }
       default: {
@@ -208,7 +218,7 @@ export async function generateSummary(
     prompt: `${prompt}:\n\n${content.slice(0, 12000)}`,
   })
 
-  return text ? `${text}\n\n[by ${config.providerId}]` : ""
+  return text || ""
 }
 
 /**

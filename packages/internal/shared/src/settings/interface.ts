@@ -235,6 +235,7 @@ export type UserByokProviderConfig = {
   provider: ByokProviderName
   baseURL?: string | null
   apiKey?: string | null
+  modelName?: string | null // Custom model name (e.g., "gpt-4o", "gemini-2.0-flash")
   headers?: Record<string, string>
 }
 

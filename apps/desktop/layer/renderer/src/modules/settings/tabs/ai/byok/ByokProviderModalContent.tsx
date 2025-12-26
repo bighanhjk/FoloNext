@@ -43,6 +43,7 @@ export const ByokProviderModalContent = ({
     provider: provider?.provider ?? defaultProvider,
     baseURL: provider?.baseURL ?? null,
     apiKey: provider?.apiKey ?? null,
+    modelName: provider?.modelName ?? null,
     headers: provider?.headers ?? {},
   })
 
@@ -110,6 +111,23 @@ export const ByokProviderModalContent = ({
           }
         />
         <p className="text-xs text-text-secondary">{t("byok.providers.form.api_key_help")}</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="modelName">{t("byok.providers.form.model_name")}</Label>
+        <Input
+          id="modelName"
+          type="text"
+          placeholder={t("byok.providers.form.model_name_placeholder")}
+          value={formData.modelName ?? ""}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              modelName: e.target.value || null,
+            })
+          }
+        />
+        <p className="text-xs text-text-secondary">{t("byok.providers.form.model_name_help")}</p>
       </div>
 
       <div className="flex justify-end gap-2">

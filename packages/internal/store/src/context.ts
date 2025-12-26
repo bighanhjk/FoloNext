@@ -37,3 +37,14 @@ export const queryClient = queryClientContext.consumer
 
 export const aiSettingsContext = createJSContext<() => AISettings | null>()
 export const getClientAISettings = aiSettingsContext.consumer
+
+// Context for custom fetch function (used by BYOK proxy in Electron)
+export const byokFetchContext = createJSContext<typeof fetch>()
+export const getByokFetch = () => {
+  try {
+    return byokFetchContext.consumer()
+  } catch {
+    // If no custom fetch is provided, use native fetch
+    return fetch
+  }
+}
