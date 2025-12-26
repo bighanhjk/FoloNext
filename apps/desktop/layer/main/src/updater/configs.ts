@@ -12,7 +12,7 @@ export const appUpdaterConfig = {
   enableDistributionStoreUpdate: isStoreDistribution,
 
   app: {
-    autoCheckUpdate: true,
+    autoCheckUpdate: false,
     autoDownloadUpdate: true,
     checkUpdateInterval: 15 * 60 * 1000,
   },
