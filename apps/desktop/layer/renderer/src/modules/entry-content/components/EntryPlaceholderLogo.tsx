@@ -37,16 +37,17 @@ export const EntryPlaceholderLogo = () => {
       onClick: handleSummarizeTimeline,
       icon: <i className="i-mgc-paint-brush-ai-cute-re text-base" />,
     },
-    {
-      label: "Suggest me some new feeds",
-      onClick: handleRecommendFeeds,
-      icon: <i className="i-mgc-search-ai-cute-re text-base" />,
-    },
-    {
-      label: "Sort the timeline by importance",
-      onClick: handleToggleAiTimeline,
-      icon: <i className="i-mgc-refresh-4-ai-cute-re text-base" />,
-    },
+    // TODO: These features require server-side AI, not supported in BYOK mode
+    // {
+    //   label: "Suggest me some new feeds",
+    //   onClick: handleRecommendFeeds,
+    //   icon: <i className="i-mgc-search-ai-cute-re text-base" />,
+    // },
+    // {
+    //   label: "Sort the timeline by importance",
+    //   onClick: handleToggleAiTimeline,
+    //   icon: <i className="i-mgc-refresh-4-ai-cute-re text-base" />,
+    // },
     {
       label: "Personalize my Folo AI",
       onClick: () => settingModalPresent("ai"),

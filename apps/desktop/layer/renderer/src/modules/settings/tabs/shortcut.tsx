@@ -205,9 +205,8 @@ const ShortcutInputWrapper = memo(
                 }}
               />
             ) : (
-              <KbdCombined kbdProps={{ wrapButton: false }} joint={false}>
-                {shortcut}
-              </KbdCombined>
+              // KbdCombined causes scroll lag, using simple span
+              <span className="flex items-center gap-1 font-mono text-sm">{shortcut}</span>
             )}
           </button>
         </TooltipTrigger>

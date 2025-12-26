@@ -10,7 +10,8 @@ export const loader = defineSettingPageData({
   name: "titles.plan.short",
   title: "titles.plan.long",
   priority,
-  hideIf: (ctx, serverConfigs) => ctx.isInMASReview || !serverConfigs?.PAYMENT_ENABLED,
+  // TODO: Subscription features disabled for BYOK mode
+  hideIf: () => true,
 })
 
 export function Component() {

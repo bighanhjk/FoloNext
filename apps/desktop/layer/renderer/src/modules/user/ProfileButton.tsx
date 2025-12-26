@@ -106,6 +106,7 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
 
         <DropdownMenuSeparator />
 
+        {/* TODO: Subscription features disabled for BYOK mode
         {!isInMASReview && serverConfig?.PAYMENT_ENABLED && (
           <DropdownMenuItem
             className="pl-3"
@@ -117,6 +118,7 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
             {t("activation.plan.title")}
           </DropdownMenuItem>
         )}
+        */}
 
         {aiEnabled && (
           <DropdownMenuItem
@@ -130,6 +132,7 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
           </DropdownMenuItem>
         )}
 
+        {/* TODO: Power token features disabled for BYOK mode
         {!isInMASReview && hasPowerToken && (
           <DropdownMenuItem
             className="pl-3"
@@ -141,6 +144,7 @@ export const ProfileButton: FC<ProfileButtonProps> = memo((props) => {
             {t("user_button.power")}
           </DropdownMenuItem>
         )}
+        */}
         <DropdownMenuItem
           className="pl-3"
           onClick={() => {

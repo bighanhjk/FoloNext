@@ -1,5 +1,8 @@
 import { getReadonlyRoute } from "@follow/components/atoms/route.js"
-import { DEFAULT_SUMMARIZE_TIMELINE_SHORTCUT_ID } from "@follow/shared/settings/defaults"
+import {
+  DEFAULT_RECOMMEND_FEEDS_SHORTCUT_ID,
+  DEFAULT_SUMMARIZE_TIMELINE_SHORTCUT_ID,
+} from "@follow/shared/settings/defaults"
 import type { AIShortcut } from "@follow/shared/settings/interface"
 import { DEFAULT_SHORTCUT_TARGETS } from "@follow/shared/settings/interface"
 import { cn } from "@follow/utils"
@@ -38,6 +41,8 @@ export const ChatShortcutsRow: React.FC<ChatShortcutsRowProps> = ({ onSelect }) 
     const aiPage: typeof shortcuts = []
     for (const shortcut of shortcuts) {
       if (!shortcut.enabled) continue
+      // TODO: Skip shortcuts that require server-side AI (not supported in BYOK mode)
+      if (shortcut.id === DEFAULT_RECOMMEND_FEEDS_SHORTCUT_ID) continue
       const targets =
         shortcut.displayTargets && shortcut.displayTargets.length > 0
           ? shortcut.displayTargets
