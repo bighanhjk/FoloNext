@@ -71,9 +71,12 @@ export const useEntryContent = (entryId: string) => {
     const translatedContent = isInReadabilityMode
       ? contentTranslated?.readabilityContent
       : contentTranslated?.content
-    const content = translatedContent || entryContent
+    // Return both for toggle functionality
     return {
-      content,
+      content: translatedContent || entryContent,
+      originalContent: entryContent,
+      translatedContent,
+      hasTranslation: !!translatedContent && translatedContent !== entryContent,
       error,
       isPending,
     }

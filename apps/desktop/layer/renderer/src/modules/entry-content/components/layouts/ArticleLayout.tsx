@@ -42,7 +42,6 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
   entryId,
   compact = false,
   noMedia = false,
-  translation,
 }) => {
   const entry = useEntry(entryId, (state) => ({
     feedId: state.feedId,
@@ -54,9 +53,16 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
   const isInbox = useIsInbox(entry?.inboxId)
   const [showTranscript, setShowTranscript] = useState(false)
   const [textSelection, setTextSelection] = useState<TextSelectionEvent | null>(null)
+  const [showTranslation, setShowTranslation] = useState(true) // Default to show translation
 
-  const { content } = useEntryContent(entryId)
+  const { content, originalContent, translatedContent, hasTranslation } = useEntryContent(entryId)
   const customCSS = useUISettingKey("customCSS")
+
+  // Determine which content to display based on toggle
+  const displayContent = useMemo(() => {
+    if (!hasTranslation) return content
+    return showTranslation ? translatedContent : originalContent
+  }, [hasTranslation, showTranslation, translatedContent, originalContent, content])
 
   const handleTextSelect = useCallback((event: TextSelectionEvent) => {
     setTextSelection(event)
@@ -95,6 +101,11 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
     handleSelectionClear()
   }, [entryId, handleSelectionClear])
 
+  // Reset translation toggle when entry changes
+  useEffect(() => {
+    setShowTranslation(true)
+  }, [entryId])
+
   if (!entry) return null
 
   return (
@@ -102,6 +113,25 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
       <EntryTitle entryId={entryId} compact={compact} containerClassName="mt-12" />
 
       <ArticleAudioPlayer entryId={entryId} />
+
+      {/* Translation Toggle Button */}
+      {hasTranslation && (
+        <div className="my-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowTranslation(!showTranslation)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
+              showTranslation
+                ? "bg-accent/10 text-accent hover:bg-accent/20"
+                : "bg-fill-tertiary text-text-secondary hover:bg-fill-secondary",
+            )}
+          >
+            <i className="i-mgc-translate-2-cute-re" />
+            <span>{showTranslation ? "显示原文" : "显示译文"}</span>
+          </button>
+        </div>
+      )}
 
       {/* Content Type Toggle */}
       <TranscriptToggle
@@ -136,8 +166,7 @@ export const ArticleLayout: React.FC<EntryLayoutProps> = ({
                   view={FeedViewType.Articles}
                   feedId={feed?.id || ""}
                   noMedia={noMedia}
-                  content={content}
-                  translation={translation}
+                  content={displayContent}
                 />
               </ShadowDOM>
             )}
@@ -163,14 +192,10 @@ const Renderer: React.FC<{
   feedId: string
   noMedia?: boolean
   content?: Nullable<string>
-  translation?: {
-    content?: string
-    title?: string
-  }
   onTextSelect?: (event: TextSelectionEvent) => void
   onSelectionClear?: (entryId: string) => void
   textSelectionEnabled?: boolean
-}> = ({ entryId, view, feedId, noMedia = false, content = "", translation }) => {
+}> = ({ entryId, view, feedId, noMedia = false, content = "" }) => {
   const mediaInfo = useEntryMediaInfo(entryId)
   const isMarkdownEntry = useMemo(() => {
     return isOnboardingEntry(entryId)
@@ -207,7 +232,7 @@ const Renderer: React.FC<{
       style={stableRenderStyle}
       renderInlineStyle={readerRenderInlineStyle}
     >
-      {translation?.content || content}
+      {content}
     </ContentRenderer>
   )
 }
