@@ -156,9 +156,7 @@ class SummarySyncService {
       state.data[entryId]?.[actionLanguage]?.[
         target === "content" ? "summary" : "readabilitySummary"
       ]
-    if (existing) {
-      return existing
-    }
+    if (existing) return existing
 
     const statusID = getGenerateSummaryStatusId(entryId, actionLanguage, target)
     if (state.generatingStatus[statusID] === SummaryGeneratingStatus.Pending)
@@ -171,13 +169,25 @@ class SummarySyncService {
     const run = async () => {
       // 1. Try Client-Side Generation if BYOK provider is configured
       if (hasProvider()) {
-        if (!entry.content) {
-          // TODO: Maybe trigger content fetch here?
+        // Use the appropriate content field based on target
+        const contentToSummarize =
+          target === "readabilityContent"
+            ? entry.readabilityContent || entry.content
+            : entry.content || entry.readabilityContent
+
+        if (!contentToSummarize) {
+          // Fallback to description if available
+          if (entry.description) {
+            const summary = await generateSummary(entry.description, actionLanguage)
+            if (summary) {
+              return { data: summary }
+            }
+          }
           throw new Error("Content not loaded for client-side summary")
         }
 
         try {
-          const summary = await generateSummary(entry.content, actionLanguage)
+          const summary = await generateSummary(contentToSummarize, actionLanguage)
           if (summary) {
             return { data: summary }
           }

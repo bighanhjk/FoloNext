@@ -211,14 +211,18 @@ export async function generateSummary(
 
   const prompt = getSummaryPrompt(language)
 
-  const { text } = await generateText({
-    model: config.model,
-    system:
-      "You are a helpful assistant that summarizes articles. Output only the summary text without any introduction or markdown formatting unless requested.",
-    prompt: `${prompt}:\n\n${content.slice(0, 12000)}`,
-  })
-
-  return text || ""
+  try {
+    const { text } = await generateText({
+      model: config.model,
+      system:
+        "You are a helpful assistant that summarizes articles. Output only the summary text without any introduction or markdown formatting unless requested.",
+      prompt: `${prompt}:\n\n${content.slice(0, 12000)}`,
+    })
+    return text || ""
+  } catch (e) {
+    console.error("Client-side summary failed", e)
+    throw e
+  }
 }
 
 /**
