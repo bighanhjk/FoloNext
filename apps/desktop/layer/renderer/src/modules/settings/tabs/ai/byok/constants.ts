@@ -6,4 +6,5 @@ export const PROVIDER_OPTIONS: { value: ByokProviderName; label: string }[] = [
   { value: "vercel-ai-gateway", label: "Vercel AI Gateway" },
   { value: "openrouter", label: "OpenRouter" },
   { value: "deepseek", label: "Deepseek" },
+  { value: "local", label: "Local LLM (Ollama, LM Studio, etc.)" },
 ]

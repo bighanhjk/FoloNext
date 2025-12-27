@@ -47,9 +47,15 @@ export const ByokProviderModalContent = ({
     headers: provider?.headers ?? {},
   })
 
+  const isLocalProvider = formData.provider === "local"
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.provider) {
+      return
+    }
+    // Local provider requires baseURL
+    if (isLocalProvider && !formData.baseURL) {
       return
     }
     onSave(formData)
@@ -80,11 +86,18 @@ export const ByokProviderModalContent = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="baseURL">{t("byok.providers.form.base_url")}</Label>
+        <Label htmlFor="baseURL">
+          {t("byok.providers.form.base_url")}
+          {isLocalProvider && <span className="text-red-500"> *</span>}
+        </Label>
         <Input
           id="baseURL"
           type="url"
-          placeholder={t("byok.providers.form.base_url_placeholder")}
+          placeholder={
+            isLocalProvider
+              ? "http://localhost:1234/v1"
+              : t("byok.providers.form.base_url_placeholder")
+          }
           value={formData.baseURL ?? ""}
           onChange={(e) =>
             setFormData({
@@ -92,16 +105,28 @@ export const ByokProviderModalContent = ({
               baseURL: e.target.value || null,
             })
           }
+          required={isLocalProvider}
         />
-        <p className="text-xs text-text-secondary">{t("byok.providers.form.base_url_help")}</p>
+        <p className="text-xs text-text-secondary">
+          {isLocalProvider
+            ? "Required. Examples: Ollama (http://localhost:11434/v1), LM Studio (http://localhost:1234/v1)"
+            : t("byok.providers.form.base_url_help")}
+        </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="apiKey">{t("byok.providers.form.api_key")}</Label>
+        <Label htmlFor="apiKey">
+          {t("byok.providers.form.api_key")}
+          {isLocalProvider && <span className="text-text-secondary"> (optional)</span>}
+        </Label>
         <Input
           id="apiKey"
           type="password"
-          placeholder={t("byok.providers.form.api_key_placeholder")}
+          placeholder={
+            isLocalProvider
+              ? "Usually not required for local LLMs"
+              : t("byok.providers.form.api_key_placeholder")
+          }
           value={formData.apiKey ?? ""}
           onChange={(e) =>
             setFormData({
@@ -110,7 +135,11 @@ export const ByokProviderModalContent = ({
             })
           }
         />
-        <p className="text-xs text-text-secondary">{t("byok.providers.form.api_key_help")}</p>
+        <p className="text-xs text-text-secondary">
+          {isLocalProvider
+            ? "Most local LLMs don't require an API key. Leave empty if your server doesn't need one."
+            : t("byok.providers.form.api_key_help")}
+        </p>
       </div>
 
       <div className="space-y-2">

@@ -1,6 +1,7 @@
 import { createDeepSeek } from "@ai-sdk/deepseek"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import type { SupportedActionLanguage } from "@follow/shared"
 import { generateText, streamText } from "ai"
 
@@ -108,16 +109,18 @@ export function getModel(modelId?: string): ModelConfig | null {
         }
       }
       case "local": {
-        // For local, we default to OpenAI compatible interface for now (e.g. Ollama)
-        // This is a placeholder for future deeper local integration
+        // For local, use OpenAI-compatible interface (e.g. Ollama, LM Studio)
+        // Uses Chat Completions API, not Responses API
         if (!p.baseURL) return null
         const modelName = p.modelName || "llama3"
+        const localProvider = createOpenAICompatible({
+          name: "local-llm",
+          baseURL: p.baseURL,
+          headers: p.apiKey ? { Authorization: `Bearer ${p.apiKey}` } : undefined,
+          fetch: customFetch,
+        })
         return {
-          model: createOpenAI({
-            apiKey: p.apiKey || "not-needed",
-            baseURL: p.baseURL,
-            fetch: customFetch,
-          })(modelName),
+          model: localProvider(modelName),
           providerId: "local" as any,
           modelName,
         }

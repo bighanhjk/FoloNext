@@ -125,7 +125,8 @@ export const {
   useSettingValue: useAISettingValue,
   settingAtom: __aiSettingAtom,
 } = createSettingAtom("ai", createDefaultSettings)
-export const aiServerSyncWhiteListKeys = []
+// byok is excluded from server sync because server may not support all provider types (e.g., 'local')
+export const aiServerSyncWhiteListKeys: (keyof AISettings)[] = ["byok"]
 
 export const syncServerShortcuts = (
   serverShortcuts: readonly ServerShortcutConfig[] | null | undefined,

@@ -1843,6 +1843,9 @@ importers:
       '@ai-sdk/openai':
         specifier: 3.0.1
         version: 3.0.1(zod@4.2.1)
+      '@ai-sdk/openai-compatible':
+        specifier: 2.0.1
+        version: 2.0.1(zod@4.2.1)
       '@follow-app/client-sdk':
         specifier: 'catalog:'
         version: 0.3.92(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(better-sqlite3@12.4.1)(expo-sqlite@15.2.12(expo@53.0.12(@babel/core@7.28.5)(@expo/metro-runtime@5.0.4(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.0.0)))(bufferutil@4.0.9)(graphql@16.8.1)(react-native-webview@13.16.0(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.28.5)(@types/react@19.2.2)(bufferutil@4.0.9)(react@19.0.0))(react@19.0.0))(hono@4.9.8)(kysely@0.28.8)(pg@8.16.3)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -2028,6 +2031,12 @@ packages:
 
   '@ai-sdk/google@3.0.1':
     resolution: {integrity: sha512-gh7i4lEvd1CElmefkq7+RoUhNkhP2OTshzVxSt7/Vh2AV5wTPLhduKJMg1c7SFwErytqffO3el/M/LlfCsqzEw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/openai-compatible@2.0.1':
+    resolution: {integrity: sha512-6tfF6YAREdECPHqQ4ydZFQyY6AiwRc+MHZPbwx2HGsLBTPQXtImLO+iew/pB9XjD2G8s4un6PSNYK//Y+jWDcQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -17180,6 +17189,12 @@ snapshots:
       zod: 4.2.1
 
   '@ai-sdk/google@3.0.1(zod@4.2.1)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.0
+      '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)
+      zod: 4.2.1
+
+  '@ai-sdk/openai-compatible@2.0.1(zod@4.2.1)':
     dependencies:
       '@ai-sdk/provider': 3.0.0
       '@ai-sdk/provider-utils': 4.0.1(zod@4.2.1)

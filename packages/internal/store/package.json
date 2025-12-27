@@ -112,6 +112,7 @@
     "@ai-sdk/deepseek": "2.0.1",
     "@ai-sdk/google": "3.0.1",
     "@ai-sdk/openai": "3.0.1",
+    "@ai-sdk/openai-compatible": "2.0.1",
     "@follow-app/client-sdk": "catalog:",
     "@follow/configs": "workspace:*",
     "@follow/constants": "workspace:*",
